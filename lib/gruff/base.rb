@@ -1193,7 +1193,7 @@ module Gruff
     def label(value, increment)
       label = begin
         if increment
-          if increment >= 10 || (increment * 1) == (increment * 1).to_i.to_f
+          if increment >= 10 || increment == increment.to_i.to_f
             sprintf('%0i', value)
           elsif increment >= 1.0 || (increment * 10) == (increment * 10).to_i.to_f
             sprintf('%0.1f', value)
