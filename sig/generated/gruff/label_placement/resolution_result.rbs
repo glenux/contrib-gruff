@@ -1,0 +1,28 @@
+# Generated from lib/gruff/label_placement/resolution_result.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::ResolutionResult
+  attr_reader labels: Array[Gruff::LabelPlacement::PlacedLabel]
+
+  attr_reader unresolved_pairs: Array[[ Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel ]]
+
+  attr_reader iteration_count: Integer
+
+  attr_reader stopped_reason: Symbol
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs unresolved_pairs: Array[[Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel]]
+  # @rbs iteration_count: Integer
+  # @rbs stopped_reason: Symbol
+  # @rbs return: void
+  def initialize: (labels: Array[Gruff::LabelPlacement::PlacedLabel], unresolved_pairs: Array[[ Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel ]], iteration_count: Integer, stopped_reason: Symbol) -> void
+
+  # @rbs return: bool
+  def resolved?: () -> bool
+
+  # @rbs return: bool
+  def unresolved?: () -> bool
+
+  # @rbs return: Array[String | Symbol | Integer]
+  def unresolved_label_ids: () -> Array[String | Symbol | Integer]
+end

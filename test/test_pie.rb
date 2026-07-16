@@ -203,6 +203,177 @@ class TestGruffPie < GruffTestCase
     assert_same_image('test/expected/pie_label_format.png', 'test/output/pie_label_format.png')
   end
 
+  def test_small_slice_labels_are_readable
+    g = Gruff::Pie.new(400)
+    g.title = 'Small Slice Labels'
+    g.sort = false
+    g.marker_font_size = 40.0
+
+    10.times do |index|
+      g.data("Slice #{index + 1}", 4)
+    end
+    g.data('Large', 80)
+
+    g.write('test/output/pie_small_slice_labels.png')
+
+    assert_same_image('test/expected/pie_small_slice_labels.png', 'test/output/pie_small_slice_labels.png')
+  end
+
+  def test_label_placement_strategy_accepts_known_values
+    g = Gruff::Pie.new
+
+    assert_equal Gruff::LabelPlacement::PieMoveBothStrategy, g.__send__(:label_placement_strategy_class)
+
+    g.label_placement_strategy = :move_smaller_slice
+
+    assert_equal Gruff::LabelPlacement::PieMoveSmallerSliceStrategy, g.__send__(:label_placement_strategy_class)
+
+    g.label_placement_strategy = 'move_below_median_offset'
+
+    assert_equal Gruff::LabelPlacement::PieMoveBelowMedianOffsetStrategy, g.__send__(:label_placement_strategy_class)
+  end
+
+  def test_label_placement_strategy_rejects_unknown_values
+    g = Gruff::Pie.new
+
+    error = assert_raises(ArgumentError) do
+      g.label_placement_strategy = :unknown
+    end
+
+    assert_equal 'Unknown label placement strategy: :unknown', error.message
+  end
+
+  def test_position_labels_preserves_coordinates_for_each_public_strategy_when_labels_do_not_collide
+    Gruff::Pie::LABEL_PLACEMENT_STRATEGIES.each do |strategy|
+      g = build_label_placement_test_graph(strategy)
+      g.sort = false
+      g.data('Small', 25)
+      g.data('Large', 75)
+
+      labels = prepared_positionable_labels_for(g)
+      original_coordinates = labels.map { |label| [label.id, label.x, label.y] }
+
+      positioned_coordinates = g.__send__(:position_labels, labels).map { |label| [label.id, label.x, label.y] }
+
+      assert_equal original_coordinates, positioned_coordinates, "Expected #{strategy} to preserve already valid label coordinates"
+      refute labels.any?(&:moved), "Expected #{strategy} not to mark non-colliding labels as moved"
+      assert_instance_of Gruff::LabelPlacement::ResolutionResult, g.last_label_placement_result
+      assert_predicate g.last_label_placement_result, :resolved?
+    end
+  end
+
+  def test_position_labels_stores_the_last_label_placement_result
+    g = Gruff::Pie.new(400)
+    g.sort = false
+    g.data('Small', 25)
+    g.data('Large', 75)
+
+    g.__send__(:setup_data)
+    g.__send__(:setup_drawing)
+
+    labels = []
+    g.__send__(:slices).each do |slice|
+      label = g.__send__(:process_label_for, slice, labels.length)
+      labels << label if label
+      g.__send__(:update_chart_degrees_with, slice.degrees)
+    end
+
+    g.__send__(:position_labels, labels)
+
+    assert_instance_of Gruff::LabelPlacement::ResolutionResult, g.last_label_placement_result
+    assert_predicate g.last_label_placement_result, :resolved?
+  end
+
+  def test_move_both_strategy_prefers_the_first_label_when_one_step_resolves_a_tied_collision
+    g = build_label_placement_test_graph(:move_both)
+    labels = [
+      build_strategy_label(0, x: 100.0, angle: 180.0, slice_degrees: 40.0),
+      build_strategy_label(1, x: 137.0, angle: 0.0, slice_degrees: 20.0)
+    ]
+
+    g.__send__(:position_labels, labels)
+
+    moved_label_ids = labels.filter_map { |label| label.id if label.moved }
+
+    assert_equal [0], moved_label_ids
+    assert_operator labels[0].offset, :>, 0.0
+    assert_in_delta 0.0, labels[1].offset
+    assert_predicate g.last_label_placement_result, :resolved?
+  end
+
+  def test_move_smaller_slice_strategy_prefers_the_smaller_slice_when_one_step_resolves_a_tied_collision
+    g = build_label_placement_test_graph(:move_smaller_slice)
+    labels = [
+      build_strategy_label(0, x: 100.0, angle: 180.0, slice_degrees: 40.0),
+      build_strategy_label(1, x: 137.0, angle: 0.0, slice_degrees: 20.0)
+    ]
+
+    g.__send__(:position_labels, labels)
+
+    moved_label_ids = labels.filter_map { |label| label.id if label.moved }
+
+    assert_equal [1], moved_label_ids
+    assert_in_delta 0.0, labels[0].offset
+    assert_operator labels[1].offset, :>, 0.0
+    assert_predicate g.last_label_placement_result, :resolved?
+  end
+
+  def test_move_below_median_offset_strategy_prefers_the_label_below_the_median_offset
+    g = build_label_placement_test_graph(:move_below_median_offset)
+    labels = [
+      build_strategy_label(0, x: 100.0, angle: 180.0, slice_degrees: 40.0, offset: 0.0),
+      build_strategy_label(1, x: 117.0, angle: 0.0, slice_degrees: 20.0, offset: 20.0),
+      build_strategy_label(2, x: 300.0, angle: 0.0, slice_degrees: 60.0, offset: 10.0)
+    ]
+
+    g.__send__(:position_labels, labels)
+
+    assert_operator labels[0].offset, :>, 0.0
+    assert_in_delta 20.0, labels[1].offset
+    assert_in_delta 0.0, labels[2].offset
+    assert_predicate g.last_label_placement_result, :resolved?
+  end
+
+  def test_draw_positioned_labels_only_draws_connectors_for_labels_moved_by_the_selected_strategy
+    g = build_label_placement_test_graph(:move_smaller_slice)
+    labels = [
+      build_strategy_label(0, x: 100.0, angle: 180.0, slice_degrees: 40.0),
+      build_strategy_label(1, x: 137.0, angle: 0.0, slice_degrees: 20.0)
+    ]
+    positioned_labels = g.__send__(:position_labels, labels)
+    connector_ids = []
+    rendered_texts = []
+
+    g.stub(:draw_label_connector, lambda { |label|
+      connector_ids << label.id
+    }) do
+      g.stub(:draw_label_at, lambda { |_width, _height, _x, _y, text, **_kwargs|
+        rendered_texts << text
+      }) do
+        g.__send__(:draw_positioned_labels, positioned_labels)
+      end
+    end
+
+    assert_equal [1], connector_ids
+    assert_equal %w[0 1], rendered_texts
+  end
+
+  def test_position_labels_exposes_unresolved_collisions_when_the_selected_strategy_cannot_make_progress
+    g = build_label_placement_test_graph(:move_smaller_slice)
+    labels = [
+      build_strategy_label(0, x: 773.0, angle: 0.0, slice_degrees: 40.0),
+      build_strategy_label(1, x: 797.0, angle: 0.0, slice_degrees: 20.0)
+    ]
+
+    g.__send__(:position_labels, labels)
+    unresolved_pairs = g.last_label_placement_result.unresolved_pairs.map { |first, second| [first.id, second.id] }
+
+    assert_equal :no_progress, g.last_label_placement_result.stopped_reason
+    assert_predicate g.last_label_placement_result, :unresolved?
+    assert_equal [[0, 1]], unresolved_pairs
+    assert_equal [0, 1], g.last_label_placement_result.unresolved_label_ids.sort
+  end
+
   def test_zero_degree
     g = setup_basic_graph
     g.title = 'zero_degree'
@@ -252,5 +423,48 @@ protected
     end
 
     g
+  end
+
+  def build_label_placement_test_graph(strategy = nil, size = 400)
+    g = Gruff::Pie.new(size)
+    g.font = File.join(fixtures_dir, 'Roboto-Light.ttf')
+    g.label_placement_strategy = strategy if strategy
+    g
+  end
+
+  def prepared_positionable_labels_for(graph)
+    graph.__send__(:setup_data)
+    graph.__send__(:setup_drawing)
+
+    labels = []
+    graph.__send__(:slices).each do |slice|
+      next if slice.value <= 0
+
+      label = graph.__send__(:process_label_for, slice, labels.length)
+      labels << label if label
+      graph.__send__(:update_chart_degrees_with, slice.degrees)
+    end
+
+    labels
+  end
+
+  def build_strategy_label(id, x:, angle:, slice_degrees:, offset: 0.0, y: 100.0)
+    Gruff::LabelPlacement::PiePlacedLabel.new(
+      id: id,
+      text: id.to_s,
+      x: x,
+      y: y,
+      width: 40.0,
+      height: 20.0,
+      order: id,
+      angle: angle,
+      base_x: x,
+      base_y: y,
+      color: '#000000',
+      slice_degrees: slice_degrees,
+      slice_value: slice_degrees
+    ).tap do |label|
+      label.offset = offset
+    end
   end
 end

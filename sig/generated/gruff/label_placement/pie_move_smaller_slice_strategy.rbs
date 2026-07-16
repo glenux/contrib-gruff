@@ -1,0 +1,11 @@
+# Generated from lib/gruff/label_placement/pie_move_smaller_slice_strategy.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::PieMoveSmallerSliceStrategy < Gruff::LabelPlacement::PieStrategy
+  private
+
+  # @rbs first: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs return: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  def tie_breaker_labels: (Gruff::LabelPlacement::PiePlacedLabel first, Gruff::LabelPlacement::PiePlacedLabel second) -> Array[Gruff::LabelPlacement::PiePlacedLabel]
+end

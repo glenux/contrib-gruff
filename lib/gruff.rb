@@ -36,6 +36,7 @@ module Gruff
   autoload :Candlestick, Gruff.libpath('candlestick')
   autoload :Dot, Gruff.libpath('dot')
   autoload :Histogram, Gruff.libpath('histogram')
+  autoload :LabelPlacement, Gruff.libpath('label_placement')
   autoload :Line, Gruff.libpath('line')
   autoload :Net, Gruff.libpath('net')
   autoload :Pie, Gruff.libpath('pie')

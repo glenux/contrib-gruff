@@ -1,0 +1,5 @@
+# Generated from lib/gruff/label_placement.rb with RBS::Inline
+
+# @private
+module Gruff::LabelPlacement
+end

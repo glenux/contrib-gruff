@@ -13,6 +13,18 @@
 class Gruff::Pie < Gruff::Base
   DEFAULT_TEXT_OFFSET_PERCENTAGE: ::Float
 
+  DEFAULT_LABEL_PLACEMENT_STRATEGY: ::Symbol
+
+  LABEL_PLACEMENT_STRATEGIES: untyped
+
+  LABEL_COLLISION_PADDING: ::Float
+
+  RADIAL_LABEL_STEP: ::Float
+
+  RADIAL_LABEL_TIGHTENING_STEP: ::Float
+
+  MAX_LABEL_POSITION_ITERATIONS: ::Integer
+
   # Can be used to make the pie start cutting slices at the top (-90.0)
   # or at another angle. Default is +-90.0+, which starts at 3 o'clock.
   attr_writer start_degree: Float | Integer
@@ -34,6 +46,18 @@ class Gruff::Pie < Gruff::Base
   # Set to +true+ if you want the data sets sorted with largest avg values drawn
   # first. Default is +true+.
   attr_writer sort: bool
+
+  # Details from the most recent label placement pass. This is primarily useful
+  # when diagnosing collisions that the configured placement strategy could not resolve.
+  attr_reader last_label_placement_result: nil | Gruff::LabelPlacement::ResolutionResult
+
+  # Select how overlapping pie labels are repositioned.
+  # Supported values are +:move_both+, +:move_smaller_slice+, and
+  # +:move_below_median_offset+.
+  # Defaults to +:move_both+.
+  # @rbs value: Symbol | String
+  # @rbs return: void
+  def label_placement_strategy=: (Symbol | String value) -> void
 
   # Can be used to make the pie start cutting slices at the top (-90.0)
   # or at another angle. Default is +-90.0+, which starts at 3 o'clock.
@@ -92,8 +116,39 @@ class Gruff::Pie < Gruff::Base
   def ellipse_factor: () -> (Float | Integer)
 
   # @rbs slice: Gruff::Pie::PieSlice
+  # @rbs index: Integer
+  # @rbs return: nil | Gruff::LabelPlacement::PiePlacedLabel
+  def process_label_for: (Gruff::Pie::PieSlice slice, Integer index) -> (nil | Gruff::LabelPlacement::PiePlacedLabel)
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  def position_labels: (Array[Gruff::LabelPlacement::PiePlacedLabel] labels) -> Array[Gruff::LabelPlacement::PiePlacedLabel]
+
+  # @rbs return: Gruff::LabelPlacement::PlacementStrategy
+  def build_label_placement_strategy: () -> Gruff::LabelPlacement::PlacementStrategy
+
+  # @rbs return: Float | Integer
+  def label_placement_max_x: () -> (Float | Integer)
+
+  # @rbs return: Float | Integer
+  def label_placement_max_y: () -> (Float | Integer)
+
+  # @rbs return: untyped
+  def label_placement_strategy_class: () -> untyped
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
   # @rbs return: void
-  def process_label_for: (Gruff::Pie::PieSlice slice) -> void
+  def draw_positioned_labels: (Array[Gruff::LabelPlacement::PiePlacedLabel] labels) -> void
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs return: void
+  def draw_label_connector: (Gruff::LabelPlacement::PiePlacedLabel label) -> void
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs unit_x: Float
+  # @rbs unit_y: Float
+  # @rbs return: [Float, Float]
+  def label_connector_endpoint: (Gruff::LabelPlacement::PiePlacedLabel label, Float unit_x, Float unit_y) -> [ Float, Float ]
 
   # @rbs slice: Gruff::Pie::PieSlice
   # @rbs return: [Float | Integer, Float | Integer]

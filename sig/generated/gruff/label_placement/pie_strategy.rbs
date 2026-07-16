@@ -1,0 +1,57 @@
+# Generated from lib/gruff/label_placement/pie_strategy.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::PieStrategy < Gruff::LabelPlacement::PlacementStrategy
+  # @rbs max_x: Float | Integer
+  # @rbs max_y: Float | Integer
+  # @rbs collision_detector: Gruff::LabelPlacement::CollisionDetector
+  # @rbs radial_step: Float | Integer
+  # @rbs tightening_step: Float | Integer
+  # @rbs max_iterations: Integer
+  # @rbs debug_hook: nil | Proc
+  # @rbs return: void
+  def initialize: (max_x: Float | Integer, max_y: Float | Integer, collision_detector: Gruff::LabelPlacement::CollisionDetector, radial_step: Float | Integer, tightening_step: Float | Integer, max_iterations: Integer, ?debug_hook: nil | Proc) -> void
+
+  private
+
+  attr_reader offsets_by_label_id: Hash[String | Symbol | Integer, Float]
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: void
+  def prepare: (Array[Gruff::LabelPlacement::PiePlacedLabel] labels) -> void
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs _labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: bool
+  def can_move_label?: (Gruff::LabelPlacement::PiePlacedLabel label, untyped _labels) -> bool
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs _labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: void
+  def move_label!: (Gruff::LabelPlacement::PiePlacedLabel label, untyped _labels) -> void
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: void
+  def tighten: (Array[Gruff::LabelPlacement::PiePlacedLabel] labels) -> void
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs offset: Float | Integer
+  # @rbs return: void
+  def apply_offset!: (Gruff::LabelPlacement::PiePlacedLabel label, Float | Integer offset) -> void
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs return: bool
+  def within_canvas?: (Gruff::LabelPlacement::PiePlacedLabel label) -> bool
+
+  # @rbs angle: Float | Integer
+  # @rbs return: Float
+  def deg2rad: (Float | Integer angle) -> Float
+
+  # @rbs first: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs return: Gruff::LabelPlacement::PiePlacedLabel
+  def smaller_slice_label: (Gruff::LabelPlacement::PiePlacedLabel first, Gruff::LabelPlacement::PiePlacedLabel second) -> Gruff::LabelPlacement::PiePlacedLabel
+
+  # @rbs return: Float
+  def median_offset: () -> Float
+end

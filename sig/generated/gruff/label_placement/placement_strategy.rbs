@@ -1,0 +1,71 @@
+# Generated from lib/gruff/label_placement/placement_strategy.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::PlacementStrategy
+  attr_reader last_resolution_result: nil | Gruff::LabelPlacement::ResolutionResult
+
+  # @rbs collision_detector: Gruff::LabelPlacement::CollisionDetector
+  # @rbs max_iterations: Integer
+  # @rbs debug_hook: nil | Proc
+  # @rbs return: void
+  def initialize: (collision_detector: Gruff::LabelPlacement::CollisionDetector, max_iterations: Integer, ?debug_hook: nil | Proc) -> void
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: Array[Gruff::LabelPlacement::PlacedLabel]
+  def resolve: (Array[Gruff::LabelPlacement::PlacedLabel] labels) -> Array[Gruff::LabelPlacement::PlacedLabel]
+
+  private
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: void
+  def prepare: (Array[Gruff::LabelPlacement::PlacedLabel] labels) -> void
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: void
+  def tighten: (Array[Gruff::LabelPlacement::PlacedLabel] labels) -> void
+
+  # @rbs pairs: Array[[Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel]]
+  # @rbs collision_counts: Hash[String | Symbol | Integer, Integer]
+  # @rbs return: Array[[Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel]]
+  def sorted_pairs: (Array[[ Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel ]] pairs, Hash[String | Symbol | Integer, Integer] collision_counts) -> Array[[ Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel ]]
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs collision_counts: Hash[String | Symbol | Integer, Integer]
+  # @rbs return: Array[Integer]
+  def pair_sort_key: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second, Hash[String | Symbol | Integer, Integer] collision_counts) -> Array[Integer]
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs collision_counts: Hash[String | Symbol | Integer, Integer]
+  # @rbs return: bool
+  def move_pair: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second, Array[Gruff::LabelPlacement::PlacedLabel] labels, Hash[String | Symbol | Integer, Integer] collision_counts) -> bool
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs collision_counts: Hash[String | Symbol | Integer, Integer]
+  # @rbs return: Array[Gruff::LabelPlacement::PlacedLabel]
+  def candidate_labels_for_pair: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second, Hash[String | Symbol | Integer, Integer] collision_counts) -> Array[Gruff::LabelPlacement::PlacedLabel]
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs collision_counts: Hash[String | Symbol | Integer, Integer]
+  # @rbs return: Array[Gruff::LabelPlacement::PlacedLabel]
+  def labels_for_pair: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second, Hash[String | Symbol | Integer, Integer] collision_counts) -> Array[Gruff::LabelPlacement::PlacedLabel]
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs return: Array[Gruff::LabelPlacement::PlacedLabel]
+  def tie_breaker_labels: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second) -> Array[Gruff::LabelPlacement::PlacedLabel]
+
+  # @rbs label: Gruff::LabelPlacement::PlacedLabel
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: bool
+  def can_move_label?: (Gruff::LabelPlacement::PlacedLabel label, Array[Gruff::LabelPlacement::PlacedLabel] labels) -> bool
+
+  # @rbs label: Gruff::LabelPlacement::PlacedLabel
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: void
+  def move_label!: (Gruff::LabelPlacement::PlacedLabel label, Array[Gruff::LabelPlacement::PlacedLabel] labels) -> void
+end

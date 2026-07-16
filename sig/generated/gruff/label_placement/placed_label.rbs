@@ -1,0 +1,44 @@
+# Generated from lib/gruff/label_placement/placed_label.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::PlacedLabel
+  attr_accessor id: String | Symbol | Integer
+
+  attr_accessor text: String
+
+  attr_accessor x: Float
+
+  attr_accessor y: Float
+
+  attr_accessor width: Float
+
+  attr_accessor height: Float
+
+  attr_accessor offset: Float
+
+  attr_accessor moved: bool
+
+  attr_reader order: Integer
+
+  # @rbs id: String | Symbol | Integer
+  # @rbs text: String
+  # @rbs x: Float | Integer
+  # @rbs y: Float | Integer
+  # @rbs width: Float | Integer
+  # @rbs height: Float | Integer
+  # @rbs order: Integer
+  # @rbs return: void
+  def initialize: (id: String | Symbol | Integer, text: String, x: Float | Integer, y: Float | Integer, width: Float | Integer, height: Float | Integer, ?order: Integer) -> void
+
+  # @rbs return: Float
+  def left: () -> Float
+
+  # @rbs return: Float
+  def top: () -> Float
+
+  # @rbs return: Float
+  def right: () -> Float
+
+  # @rbs return: Float
+  def bottom: () -> Float
+end

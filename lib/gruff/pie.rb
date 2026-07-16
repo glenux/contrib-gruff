@@ -15,6 +15,37 @@
 #
 class Gruff::Pie < Gruff::Base
   DEFAULT_TEXT_OFFSET_PERCENTAGE = 0.1
+  DEFAULT_LABEL_PLACEMENT_STRATEGY = :move_both
+  LABEL_PLACEMENT_STRATEGIES = %i[move_both move_smaller_slice move_below_median_offset].freeze
+
+  # Reserve a small visual gutter between label bounds.
+  #
+  # Text that only barely avoids overlapping still reads as crowded once
+  # anti-aliasing is applied, so collision detection intentionally treats a
+  # near-touching layout as unresolved.
+  LABEL_COLLISION_PADDING = 4.0
+
+  # Search outward in coarse increments first.
+  #
+  # The initial pass needs to separate dense groups quickly without spending too
+  # many iterations nudging labels by single pixels. The tightening pass below
+  # is responsible for reclaiming the extra space precisely once the collisions
+  # are gone.
+  RADIAL_LABEL_STEP = 8.0
+
+  # Tighten one pixel at a time after the coarse search.
+  #
+  # This keeps the final placement deterministic and close to the pie instead of
+  # relying on image snapshots to bless an arbitrary overshoot from the coarse
+  # search step.
+  RADIAL_LABEL_TIGHTENING_STEP = 1.0
+
+  # Hard stop for pathological layouts.
+  #
+  # Label placement is heuristic, so the resolver needs a fixed budget to avoid
+  # an endless search on charts that cannot be fully untangled inside the
+  # available canvas. The resolution result exposes when this limit is hit.
+  MAX_LABEL_POSITION_ITERATIONS = 100
 
   # Can be used to make the pie start cutting slices at the top (-90.0)
   # or at another angle. Default is +-90.0+, which starts at 3 o'clock.
@@ -38,6 +69,26 @@ class Gruff::Pie < Gruff::Base
   # first. Default is +true+.
   attr_writer :sort #: bool
 
+  # Details from the most recent label placement pass. This is primarily useful
+  # when diagnosing collisions that the configured placement strategy could not resolve.
+  attr_reader :last_label_placement_result #: nil | Gruff::LabelPlacement::ResolutionResult
+
+  # Select how overlapping pie labels are repositioned.
+  # Supported values are +:move_both+, +:move_smaller_slice+, and
+  # +:move_below_median_offset+.
+  # Defaults to +:move_both+.
+  # @rbs value: Symbol | String
+  # @rbs return: void
+  def label_placement_strategy=(value)
+    strategy = value.respond_to?(:to_sym) ? value.to_sym : value
+
+    unless LABEL_PLACEMENT_STRATEGIES.include?(strategy)
+      raise ArgumentError, "Unknown label placement strategy: #{value.inspect}"
+    end
+
+    @label_placement_strategy = strategy
+  end
+
   # Can be used to make the pie start cutting slices at the top (-90.0)
   # or at another angle. Default is +-90.0+, which starts at 3 o'clock.
   # @deprecated Please use {#start_degree=} instead.
@@ -59,6 +110,8 @@ private
     @show_values_as_labels = false
     @marker_font.bold = true
     @sort = true
+    @label_placement_strategy = DEFAULT_LABEL_PLACEMENT_STRATEGY
+    @last_label_placement_result = nil
 
     @hide_line_markers = true
     @hide_line_markers.freeze
@@ -74,14 +127,19 @@ private
 
   # @rbs return: void
   def draw_graph
+    labels = []
+
     slices.each do |slice|
       if slice.value > 0
         Gruff::Renderer::Ellipse.new(renderer, color: slice.color, width: radius)
                                 .render(center_x, center_y, radius / 2.0, radius / 2.0, chart_degrees, chart_degrees + slice.degrees + 0.5)
-        process_label_for slice
+        label = process_label_for(slice, labels.length)
+        labels << label if label
         update_chart_degrees_with slice.degrees
       end
     end
+
+    draw_positioned_labels(position_labels(labels))
   end
 
   # @rbs return: Array[Gruff::Pie::PieSlice]
@@ -157,13 +215,117 @@ private
   # Label-Related Methods
 
   # @rbs slice: Gruff::Pie::PieSlice
-  # @rbs return: void
-  def process_label_for(slice)
-    if slice.percentage >= @hide_labels_less_than
-      x, y = label_coordinates_for slice
-      label = @label_formatting.call(slice.value, slice.percentage)
-      draw_label_at(1.0, 1.0, x, y, label, gravity: Magick::CenterGravity)
+  # @rbs index: Integer
+  # @rbs return: nil | Gruff::LabelPlacement::PiePlacedLabel
+  def process_label_for(slice, index)
+    return if slice.percentage < @hide_labels_less_than
+
+    x, y = label_coordinates_for(slice)
+    label_text = truncate_label_text(@label_formatting.call(slice.value, slice.percentage).to_s)
+    metrics = text_metrics(@marker_font, label_text)
+
+    Gruff::LabelPlacement::PiePlacedLabel.new(
+      id: index,
+      text: label_text,
+      x: x,
+      y: y,
+      width: metrics.width,
+      height: metrics.height,
+      order: index,
+      color: slice.color,
+      angle: chart_degrees + (slice.degrees / 2.0),
+      base_x: x,
+      base_y: y,
+      slice_degrees: slice.degrees,
+      slice_value: slice.value
+    )
+  end
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  def position_labels(labels)
+    @last_label_placement_result = nil
+    build_label_placement_strategy.resolve(labels)
+  end
+
+  # @rbs return: Gruff::LabelPlacement::PlacementStrategy
+  def build_label_placement_strategy
+    label_placement_strategy_class.new(
+      max_x: label_placement_max_x,
+      max_y: label_placement_max_y,
+      collision_detector: Gruff::LabelPlacement::CollisionDetector.new(padding: LABEL_COLLISION_PADDING),
+      radial_step: RADIAL_LABEL_STEP,
+      tightening_step: RADIAL_LABEL_TIGHTENING_STEP,
+      max_iterations: MAX_LABEL_POSITION_ITERATIONS,
+      debug_hook: lambda { |result| @last_label_placement_result = result }
+    )
+  end
+
+  # @rbs return: Float | Integer
+  def label_placement_max_x
+    @columns / @scale
+  end
+
+  # @rbs return: Float | Integer
+  def label_placement_max_y
+    @rows / @scale
+  end
+
+  # @rbs return: untyped
+  def label_placement_strategy_class
+    case @label_placement_strategy
+    when :move_both
+      Gruff::LabelPlacement::PieMoveBothStrategy
+    when :move_smaller_slice
+      Gruff::LabelPlacement::PieMoveSmallerSliceStrategy
+    when :move_below_median_offset
+      Gruff::LabelPlacement::PieMoveBelowMedianOffsetStrategy
+    else
+      raise ArgumentError, "Unknown label placement strategy: #{@label_placement_strategy.inspect}"
     end
+  end
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PiePlacedLabel]
+  # @rbs return: void
+  def draw_positioned_labels(labels)
+    labels.each do |label|
+      draw_label_connector(label) if label.moved
+      draw_label_at(1.0, 1.0, label.x, label.y, label.text, gravity: Magick::CenterGravity)
+    end
+  end
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs return: void
+  def draw_label_connector(label)
+    angle = deg2rad(label.angle)
+    unit_x = Math.cos(angle)
+    unit_y = Math.sin(angle)
+    start_x = center_x + (radius * unit_x)
+    start_y = center_y + (radius * unit_y)
+    end_x, end_y = label_connector_endpoint(label, unit_x, unit_y)
+
+    Gruff::Renderer::Line.new(renderer, color: label.color).render(start_x, start_y, end_x, end_y)
+  end
+
+  # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
+  # @rbs unit_x: Float
+  # @rbs unit_y: Float
+  # @rbs return: [Float, Float]
+  def label_connector_endpoint(label, unit_x, unit_y)
+    half_width = label.width / 2.0
+    half_height = label.height / 2.0
+    scales = []
+
+    scales << (half_width / unit_x.abs) unless unit_x.zero?
+    scales << (half_height / unit_y.abs) unless unit_y.zero?
+
+    scale = (scales.min || 0.0) - 1.0
+    scale = [scale, 0.0].max
+
+    [
+      label.x - (unit_x * scale),
+      label.y - (unit_y * scale)
+    ]
   end
 
   # @rbs slice: Gruff::Pie::PieSlice

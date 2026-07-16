@@ -23,4 +23,14 @@ class Gruff::Mini::Pie < Gruff::Pie
 
   # @rbs return: void
   def draw_graph: () -> void
+
+  # Keep repositioned labels out of the reserved right legend area.
+  # @rbs return: Float | Integer
+  def label_placement_max_x: () -> (Float | Integer)
+
+  # @rbs return: bool
+  def right_legend_reserved?: () -> bool
+
+  # @rbs return: Float | Integer
+  def right_legend_left_edge: () -> (Float | Integer)
 end

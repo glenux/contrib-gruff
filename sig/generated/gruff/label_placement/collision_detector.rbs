@@ -1,0 +1,26 @@
+# Generated from lib/gruff/label_placement/collision_detector.rb with RBS::Inline
+
+# @private
+class Gruff::LabelPlacement::CollisionDetector
+  # @rbs padding: Float | Integer
+  # @rbs return: void
+  def initialize: (?padding: Float | Integer) -> void
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: Array[[Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel]]
+  def colliding_pairs: (Array[Gruff::LabelPlacement::PlacedLabel] labels) -> Array[[ Gruff::LabelPlacement::PlacedLabel, Gruff::LabelPlacement::PlacedLabel ]]
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs return: Hash[String | Symbol | Integer, Integer]
+  def collision_counts: (Array[Gruff::LabelPlacement::PlacedLabel] labels) -> Hash[String | Symbol | Integer, Integer]
+
+  # @rbs labels: Array[Gruff::LabelPlacement::PlacedLabel]
+  # @rbs target: Gruff::LabelPlacement::PlacedLabel
+  # @rbs return: bool
+  def collides_with_any?: (Array[Gruff::LabelPlacement::PlacedLabel] labels, Gruff::LabelPlacement::PlacedLabel target) -> bool
+
+  # @rbs first: Gruff::LabelPlacement::PlacedLabel
+  # @rbs second: Gruff::LabelPlacement::PlacedLabel
+  # @rbs return: bool
+  def collides?: (Gruff::LabelPlacement::PlacedLabel first, Gruff::LabelPlacement::PlacedLabel second) -> bool
+end

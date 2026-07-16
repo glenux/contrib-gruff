@@ -40,4 +40,22 @@ private
     super
     draw_vertical_legend # steep:ignore
   end
+
+  # Keep repositioned labels out of the reserved right legend area.
+  # @rbs return: Float | Integer
+  def label_placement_max_x
+    return super unless right_legend_reserved?
+
+    right_legend_left_edge
+  end
+
+  # @rbs return: bool
+  def right_legend_reserved?
+    @legend_position == :right && !@hide_mini_legend && !@original_columns.nil?
+  end
+
+  # @rbs return: Float | Integer
+  def right_legend_left_edge
+    @original_columns + @left_margin
+  end
 end

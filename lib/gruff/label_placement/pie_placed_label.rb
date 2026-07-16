@@ -1,0 +1,37 @@
+# frozen_string_literal: true
+
+# rbs_inline: enabled
+
+# @private
+class Gruff::LabelPlacement::PiePlacedLabel < Gruff::LabelPlacement::PlacedLabel
+  attr_reader :angle #: Float
+  attr_reader :base_x #: Float
+  attr_reader :base_y #: Float
+  attr_reader :color #: String
+  attr_reader :slice_degrees #: Float
+  attr_reader :slice_value #: Float | Integer
+
+  # @rbs id: String | Symbol | Integer
+  # @rbs text: String
+  # @rbs x: Float | Integer
+  # @rbs y: Float | Integer
+  # @rbs width: Float | Integer
+  # @rbs height: Float | Integer
+  # @rbs order: Integer
+  # @rbs angle: Float | Integer
+  # @rbs base_x: Float | Integer
+  # @rbs base_y: Float | Integer
+  # @rbs color: String
+  # @rbs slice_degrees: Float | Integer
+  # @rbs slice_value: Float | Integer
+  # @rbs return: void
+  def initialize(id:, text:, x:, y:, width:, height:, order:, angle:, base_x:, base_y:, color:, slice_degrees:, slice_value:)
+    super(id:, text:, x:, y:, width:, height:, order:)
+    @angle = angle.to_f
+    @base_x = base_x.to_f
+    @base_y = base_y.to_f
+    @color = color
+    @slice_degrees = slice_degrees.to_f
+    @slice_value = slice_value
+  end
+end
