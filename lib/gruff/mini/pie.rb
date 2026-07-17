@@ -33,6 +33,7 @@ private
   def setup_data
     expand_canvas_for_vertical_legend # steep:ignore
     super
+    @legend_labels = store.data.map(&:label) unless @hide_mini_legend
   end
 
   # @rbs return: void

@@ -19,6 +19,22 @@ class TestMiniPie < GruffTestCase
     assert_same_image('test/expected/mini_pie_right_legend.png', 'test/output/mini_pie_right_legend.png')
   end
 
+  def test_setup_data_refreshes_mini_legend_labels_after_sorting
+    g = Gruff::Mini::Pie.new(200)
+    g.font = File.join(fixtures_dir, 'Roboto-Light.ttf')
+    g.legend_position = :right
+    g.sort = true
+
+    g.data('Small', 10, '#111111')
+    g.data('Large', 30, '#222222')
+    g.data('Medium', 20, '#333333')
+
+    g.send(:setup_data)
+
+    assert_equal %w[Large Medium Small], g.send(:store).data.map(&:label)
+    assert_equal g.send(:store).data.map(&:label), g.instance_variable_get(:@legend_labels)
+  end
+
   def test_right_legend_keeps_long_labels_out_of_reserved_legend_area
     g = Gruff::Mini::Pie.new(200)
     g.font = File.join(fixtures_dir, 'Roboto-Light.ttf')
