@@ -285,6 +285,68 @@ class TestGruffPie < GruffTestCase
     assert_same_image('test/expected/pie_small_slice_labels.png', 'test/output/pie_small_slice_labels.png')
   end
 
+  def test_process_label_for_places_right_side_labels_from_their_left_edge
+    g = Gruff::Pie.new(400)
+    g.start_degree = -180.0
+    g.data('Only', 100)
+
+    g.__send__(:setup_data)
+    g.__send__(:setup_drawing)
+
+    label = g.__send__(:process_label_for, g.__send__(:slices).first, 0)
+    anchor_x, anchor_y = g.__send__(:label_anchor_coordinates_for, label.angle)
+
+    assert_equal :right, label.side
+    assert_in_delta anchor_x, label.left, 0.001
+    assert_in_delta anchor_y, label.y, 0.001
+    assert_in_delta label.left, label.anchor_x, 0.001
+  end
+
+  def test_process_label_for_places_left_side_labels_from_their_right_edge
+    g = Gruff::Pie.new(400)
+    g.start_degree = 0.0
+    g.data('Only', 100)
+
+    g.__send__(:setup_data)
+    g.__send__(:setup_drawing)
+
+    label = g.__send__(:process_label_for, g.__send__(:slices).first, 0)
+    anchor_x, anchor_y = g.__send__(:label_anchor_coordinates_for, label.angle)
+
+    assert_equal :left, label.side
+    assert_in_delta anchor_x, label.right, 0.001
+    assert_in_delta anchor_y, label.y, 0.001
+    assert_in_delta label.right, label.anchor_x, 0.001
+  end
+
+  def test_label_connector_endpoint_targets_the_inner_edge_of_the_label
+    g = Gruff::Pie.new(400)
+    right_label = build_strategy_label(0, x: 120.0, angle: 0.0, side: :right, slice_degrees: 20.0)
+    left_label = build_strategy_label(1, x: 80.0, angle: 180.0, side: :left, slice_degrees: 20.0)
+
+    assert_equal [100.0, 100.0], g.__send__(:label_connector_endpoint, right_label)
+    assert_equal [100.0, 100.0], g.__send__(:label_connector_endpoint, left_label)
+  end
+
+  def test_diagonal_label_anchor_stays_on_the_slice_radius
+    g = Gruff::Pie.new(400)
+    g.start_degree = -135.0
+    g.data('Only', 100)
+
+    g.__send__(:setup_data)
+    g.__send__(:setup_drawing)
+
+    label = g.__send__(:process_label_for, g.__send__(:slices).first, 0)
+    radians = g.__send__(:deg2rad, label.angle)
+    delta_x = label.anchor_x - g.__send__(:center_x)
+    delta_y = label.anchor_y - g.__send__(:center_y)
+    cross_product = (delta_x * Math.sin(radians)) - (delta_y * Math.cos(radians))
+
+    assert_equal :right, label.side
+    assert_in_delta g.__send__(:radius_offset), Math.hypot(delta_x, delta_y), 0.001
+    assert_in_delta 0.0, cross_product, 0.001
+  end
+
   def test_label_placement_strategy_accepts_known_values
     g = Gruff::Pie.new
 
@@ -514,7 +576,9 @@ protected
     labels
   end
 
-  def build_strategy_label(id, x:, angle:, slice_degrees:, offset: 0.0, y: 100.0)
+  def build_strategy_label(id, x:, angle:, side: nil, slice_degrees:, offset: 0.0, y: 100.0)
+    side ||= ((angle.to_f % 360.0) <= 90.0 || (angle.to_f % 360.0) >= 270.0) ? :right : :left
+
     Gruff::LabelPlacement::PiePlacedLabel.new(
       id: id,
       text: id.to_s,
@@ -527,6 +591,7 @@ protected
       base_x: x,
       base_y: y,
       color: '#000000',
+      side: side,
       slice_degrees: slice_degrees,
       slice_value: slice_degrees
     ).tap do |label|

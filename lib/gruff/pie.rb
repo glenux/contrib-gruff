@@ -214,11 +214,6 @@ private
     radius + (radius * @text_offset_percentage) + distance_from_center
   end
 
-  # @rbs return: Float | Integer
-  def ellipse_factor
-    radius_offset * @text_offset_percentage
-  end
-
   # Label-Related Methods
 
   # @rbs slice: Gruff::Pie::PieSlice
@@ -227,9 +222,12 @@ private
   def process_label_for(slice, index)
     return if slice.percentage < @hide_labels_less_than
 
-    x, y = label_coordinates_for(slice)
+    angle = label_angle_for(slice)
     label_text = truncate_label_text(@label_formatting.call(slice.value, slice.percentage).to_s)
     metrics = text_metrics(@marker_font, label_text)
+    side = label_side_for(angle)
+    anchor_x, anchor_y = label_anchor_coordinates_for(angle)
+    x, y = label_center_coordinates_for(anchor_x, anchor_y, metrics.width, side)
 
     Gruff::LabelPlacement::PiePlacedLabel.new(
       id: index,
@@ -240,9 +238,10 @@ private
       height: metrics.height,
       order: index,
       color: slice.color,
-      angle: chart_degrees + (slice.degrees / 2.0),
+      angle: angle,
       base_x: x,
       base_y: y,
+      side: side,
       slice_degrees: slice.degrees,
       slice_value: slice.value
     )
@@ -309,50 +308,51 @@ private
     unit_y = Math.sin(angle)
     start_x = center_x + (radius * unit_x)
     start_y = center_y + (radius * unit_y)
-    end_x, end_y = label_connector_endpoint(label, unit_x, unit_y)
+    end_x, end_y = label_connector_endpoint(label)
 
     Gruff::Renderer::Line.new(renderer, color: label.color).render(start_x, start_y, end_x, end_y)
   end
 
   # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
-  # @rbs unit_x: Float
-  # @rbs unit_y: Float
   # @rbs return: [Float, Float]
-  def label_connector_endpoint(label, unit_x, unit_y)
-    half_width = label.width / 2.0
-    half_height = label.height / 2.0
-    scales = []
-
-    scales << (half_width / unit_x.abs) unless unit_x.zero?
-    scales << (half_height / unit_y.abs) unless unit_y.zero?
-
-    scale = (scales.min || 0.0) - 1.0
-    scale = [scale, 0.0].max
-
-    [
-      label.x - (unit_x * scale),
-      label.y - (unit_y * scale)
-    ]
+  def label_connector_endpoint(label)
+    [label.anchor_x, label.anchor_y]
   end
 
   # @rbs slice: Gruff::Pie::PieSlice
-  # @rbs return: [Float | Integer, Float | Integer]
-  def label_coordinates_for(slice)
-    angle = chart_degrees + (slice.degrees / 2.0)
-
-    [x_label_coordinate(angle), y_label_coordinate(angle)]
+  # @rbs return: Float
+  def label_angle_for(slice)
+    chart_degrees + (slice.degrees / 2.0)
   end
 
   # @rbs angle: Float | Integer
-  # @rbs return: Float
-  def x_label_coordinate(angle)
-    center_x + ((radius_offset + ellipse_factor) * Math.cos(deg2rad(angle))) #: Float
+  # @rbs return: Symbol
+  def label_side_for(angle)
+    normalized_angle = angle.to_f % 360.0
+
+    normalized_angle <= 90.0 || normalized_angle >= 270.0 ? :right : :left
   end
 
   # @rbs angle: Float | Integer
-  # @rbs return: Float
-  def y_label_coordinate(angle)
-    center_y + (radius_offset * Math.sin(deg2rad(angle)))
+  # @rbs return: [Float, Float]
+  def label_anchor_coordinates_for(angle)
+    radians = deg2rad(angle)
+
+    [
+      center_x + (radius_offset * Math.cos(radians)),
+      center_y + (radius_offset * Math.sin(radians))
+    ]
+  end
+
+  # @rbs anchor_x: Float | Integer
+  # @rbs anchor_y: Float | Integer
+  # @rbs width: Float | Integer
+  # @rbs side: Symbol
+  # @rbs return: [Float, Float]
+  def label_center_coordinates_for(anchor_x, anchor_y, width, side)
+    center_label_x = side == :right ? anchor_x + (width / 2.0) : anchor_x - (width / 2.0)
+
+    [center_label_x, anchor_y.to_f]
   end
 
   # Helper Classes

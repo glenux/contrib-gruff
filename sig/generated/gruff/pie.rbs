@@ -9,6 +9,9 @@
 #    g.data 'Hamburgers', 50
 #    g.write("pie_keynote.png")
 #
+#  Each dataset becomes a single slice. When a dataset contains multiple
+#  points, the slice value is the sum of the full series.
+#
 #  To control where the pie chart starts creating slices, use {#start_degree=}.
 class Gruff::Pie < Gruff::Base
   DEFAULT_TEXT_OFFSET_PERCENTAGE: ::Float
@@ -17,12 +20,33 @@ class Gruff::Pie < Gruff::Base
 
   LABEL_PLACEMENT_STRATEGIES: untyped
 
+  # Reserve a small visual gutter between label bounds.
+  #
+  # Text that only barely avoids overlapping still reads as crowded once
+  # anti-aliasing is applied, so collision detection intentionally treats a
+  # near-touching layout as unresolved.
   LABEL_COLLISION_PADDING: ::Float
 
+  # Search outward in coarse increments first.
+  #
+  # The initial pass needs to separate dense groups quickly without spending too
+  # many iterations nudging labels by single pixels. The tightening pass below
+  # is responsible for reclaiming the extra space precisely once the collisions
+  # are gone.
   RADIAL_LABEL_STEP: ::Float
 
+  # Tighten one pixel at a time after the coarse search.
+  #
+  # This keeps the final placement deterministic and close to the pie instead of
+  # relying on image snapshots to bless an arbitrary overshoot from the coarse
+  # search step.
   RADIAL_LABEL_TIGHTENING_STEP: ::Float
 
+  # Hard stop for pathological layouts.
+  #
+  # Label placement is heuristic, so the resolver needs a fixed budget to avoid
+  # an endless search on charts that cannot be fully untangled inside the
+  # available canvas. The resolution result exposes when this limit is hit.
   MAX_LABEL_POSITION_ITERATIONS: ::Integer
 
   # Can be used to make the pie start cutting slices at the top (-90.0)
@@ -43,8 +67,8 @@ class Gruff::Pie < Gruff::Base
   # # Use values instead of percentages.
   attr_writer show_values_as_labels: bool
 
-  # Set to +true+ if you want the data sets sorted with largest avg values drawn
-  # first. Default is +true+.
+  # Set to +true+ if you want slices sorted by descending dataset totals.
+  # Pie slices use the sum of each dataset's points. Default is +true+.
   attr_writer sort: bool
 
   # Details from the most recent label placement pass. This is primarily useful
@@ -112,9 +136,6 @@ class Gruff::Pie < Gruff::Base
   # @rbs return: Float | Integer | BigDecimal
   def radius_offset: () -> (Float | Integer | BigDecimal)
 
-  # @rbs return: Float | Integer
-  def ellipse_factor: () -> (Float | Integer)
-
   # @rbs slice: Gruff::Pie::PieSlice
   # @rbs index: Integer
   # @rbs return: nil | Gruff::LabelPlacement::PiePlacedLabel
@@ -145,22 +166,27 @@ class Gruff::Pie < Gruff::Base
   def draw_label_connector: (Gruff::LabelPlacement::PiePlacedLabel label) -> void
 
   # @rbs label: Gruff::LabelPlacement::PiePlacedLabel
-  # @rbs unit_x: Float
-  # @rbs unit_y: Float
   # @rbs return: [Float, Float]
-  def label_connector_endpoint: (Gruff::LabelPlacement::PiePlacedLabel label, Float unit_x, Float unit_y) -> [ Float, Float ]
+  def label_connector_endpoint: (Gruff::LabelPlacement::PiePlacedLabel label) -> [ Float, Float ]
 
   # @rbs slice: Gruff::Pie::PieSlice
-  # @rbs return: [Float | Integer, Float | Integer]
-  def label_coordinates_for: (Gruff::Pie::PieSlice slice) -> [ Float | Integer, Float | Integer ]
+  # @rbs return: Float
+  def label_angle_for: (Gruff::Pie::PieSlice slice) -> Float
 
   # @rbs angle: Float | Integer
-  # @rbs return: Float
-  def x_label_coordinate: (Float | Integer angle) -> Float
+  # @rbs return: Symbol
+  def label_side_for: (Float | Integer angle) -> Symbol
 
   # @rbs angle: Float | Integer
-  # @rbs return: Float
-  def y_label_coordinate: (Float | Integer angle) -> Float
+  # @rbs return: [Float, Float]
+  def label_anchor_coordinates_for: (Float | Integer angle) -> [ Float, Float ]
+
+  # @rbs anchor_x: Float | Integer
+  # @rbs anchor_y: Float | Integer
+  # @rbs width: Float | Integer
+  # @rbs side: Symbol
+  # @rbs return: [Float, Float]
+  def label_center_coordinates_for: (Float | Integer anchor_x, Float | Integer anchor_y, Float | Integer width, Symbol side) -> [ Float, Float ]
 
   # Helper Classes
   #

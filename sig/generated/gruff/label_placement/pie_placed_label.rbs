@@ -10,6 +10,8 @@ class Gruff::LabelPlacement::PiePlacedLabel < Gruff::LabelPlacement::PlacedLabel
 
   attr_reader color: String
 
+  attr_reader side: Symbol
+
   attr_reader slice_degrees: Float
 
   attr_reader slice_value: Float | Integer
@@ -25,8 +27,15 @@ class Gruff::LabelPlacement::PiePlacedLabel < Gruff::LabelPlacement::PlacedLabel
   # @rbs base_x: Float | Integer
   # @rbs base_y: Float | Integer
   # @rbs color: String
+  # @rbs side: Symbol
   # @rbs slice_degrees: Float | Integer
   # @rbs slice_value: Float | Integer
   # @rbs return: void
-  def initialize: (id: String | Symbol | Integer, text: String, x: Float | Integer, y: Float | Integer, width: Float | Integer, height: Float | Integer, order: Integer, angle: Float | Integer, base_x: Float | Integer, base_y: Float | Integer, color: String, slice_degrees: Float | Integer, slice_value: Float | Integer) -> void
+  def initialize: (id: String | Symbol | Integer, text: String, x: Float | Integer, y: Float | Integer, width: Float | Integer, height: Float | Integer, order: Integer, angle: Float | Integer, base_x: Float | Integer, base_y: Float | Integer, color: String, side: Symbol, slice_degrees: Float | Integer, slice_value: Float | Integer) -> void
+
+  # @rbs return: Float
+  def anchor_x: () -> Float
+
+  # @rbs return: Float
+  def anchor_y: () -> Float
 end
