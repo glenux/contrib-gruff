@@ -25,9 +25,9 @@ class TestMiniPie < GruffTestCase
     g.legend_position = :right
     g.sort = true
 
-    g.data('Small', 10, '#111111')
-    g.data('Large', 30, '#222222')
-    g.data('Medium', 20, '#333333')
+    g.data('Small', [5, 5], '#111111')
+    g.data('Large', [10, 20], '#222222')
+    g.data('Medium', [8, 12], '#333333')
 
     g.send(:setup_data)
 

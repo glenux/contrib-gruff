@@ -97,6 +97,19 @@ In progress!
 
 ### Pie chart
 
+Each dataset contributes one slice.
+
+- `g.data(:Rent, 40)` creates a slice with value `40`.
+- `g.data(:Food, [10, 15, 5])` creates a slice with value `30`.
+- With `sort = true` (the default), pie slices and legends follow descending dataset totals.
+
+```ruby
+g = Gruff::Pie.new
+g.data :Rent, 40
+g.data :Food, [10, 15, 5]
+g.data :Savings, [8, 4]
+```
+
 ![Pie chart](https://raw.github.com/topfunky/gruff/master/test/expected/pie_pastel.png)
 
 ### Scatter chart

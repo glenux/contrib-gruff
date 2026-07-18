@@ -118,6 +118,72 @@ class TestGruffPie < GruffTestCase
     assert_same_image('test/expected/pie_one_val.png', 'test/output/pie_one_val.png')
   end
 
+  def test_single_value_inputs_keep_their_existing_slice_values
+    g = Gruff::Pie.new
+    g.sort = false
+    g.data('Scalar', 53)
+    g.data('Single Element Array', [29])
+
+    g.__send__(:setup_data)
+
+    slices = g.__send__(:slices)
+
+    assert_equal [53, 29], slices.map(&:value)
+    assert_equal [Integer, Integer], slices.map { |slice| slice.value.class }
+  end
+
+  def test_multi_point_inputs_use_summed_values_for_slices_and_sorting
+    g = Gruff::Pie.new
+    g.data('Small', [2, 1])
+    g.data('Large', [10, 15, 5])
+    g.data('Medium', [7, 5])
+
+    g.__send__(:setup_data)
+
+    slices = g.__send__(:slices)
+
+    assert_equal %w[Large Medium Small], slices.map(&:label)
+    assert_equal [30, 12, 3], slices.map(&:value)
+  end
+
+  def test_mixed_signed_points_are_allowed_when_slice_sum_is_nonnegative
+    g = Gruff::Pie.new
+    g.sort = false
+    g.data('Mixed', [10, -5])
+    g.data('Other', [5])
+
+    g.__send__(:setup_data)
+
+    slices = g.__send__(:slices)
+
+    assert_equal %w[Mixed Other], slices.map(&:label)
+    assert_equal [5, 5], slices.map(&:value)
+  end
+
+  def test_negative_summed_slice_is_rejected
+    g = Gruff::Pie.new
+    g.data('Bad', [10, -20])
+    g.data('Good', [30])
+
+    error = assert_raises(ArgumentError) do
+      g.to_image
+    end
+
+    assert_equal 'Pie chart cannot contain a slice with a negative sum', error.message
+  end
+
+  def test_nonpositive_total_is_rejected
+    g = Gruff::Pie.new
+    g.data('A', 0)
+    g.data('B', [0, 0])
+
+    error = assert_raises(ArgumentError) do
+      g.to_image
+    end
+
+    assert_equal 'Pie chart total must be greater than 0', error.message
+  end
+
   def test_no_data
     g = Gruff::Pie.new
     g.title = 'No Data'

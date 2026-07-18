@@ -11,6 +11,9 @@
 #   g.data 'Hamburgers', 50
 #   g.write("pie_keynote.png")
 #
+# Each dataset becomes a single slice. When a dataset contains multiple
+# points, the slice value is the sum of the full series.
+#
 # To control where the pie chart starts creating slices, use {#start_degree=}.
 #
 class Gruff::Pie < Gruff::Base
@@ -65,8 +68,8 @@ class Gruff::Pie < Gruff::Base
   ## Use values instead of percentages.
   attr_writer :show_values_as_labels #: bool
 
-  # Set to +true+ if you want the data sets sorted with largest avg values drawn
-  # first. Default is +true+.
+  # Set to +true+ if you want slices sorted by descending dataset totals.
+  # Pie slices use the sum of each dataset's points. Default is +true+.
   attr_writer :sort #: bool
 
   # Details from the most recent label placement pass. This is primarily useful
@@ -145,11 +148,15 @@ private
   # @rbs return: Array[Gruff::Pie::PieSlice]
   def slices
     @slices ||= begin
-      slices = store.data.map { |data| Gruff::Pie::PieSlice.new(data.label, data.points.first, data.color) }
+      slices = store.data.map { |data| Gruff::Pie::PieSlice.new(data.label, data.points.compact.sum, data.color) }
 
-      slices.sort_by(&:value) if @sort
+      raise ArgumentError, 'Pie chart cannot contain a slice with a negative sum' if slices.any? { |slice| slice.value < 0 }
+
+      slices = slices.sort_by { |slice| -slice.value.to_f } if @sort
 
       total = slices.sum(&:value).to_f
+      raise ArgumentError, 'Pie chart total must be greater than 0' if total <= 0.0
+
       slices.each { |slice| slice.total = total }
     end
   end
