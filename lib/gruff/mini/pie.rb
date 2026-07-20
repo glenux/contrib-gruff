@@ -50,6 +50,20 @@ private
     right_legend_left_edge
   end
 
+  # Keep initial label placement out of the reserved right legend area too,
+  # because radial collision resolution can only move labels farther outward.
+  # @rbs slice: Gruff::Pie::PieSlice
+  # @rbs width: Float | Integer
+  # @rbs return: [Float, Float]
+  def label_coordinates_for(slice, width)
+    x, y = super
+    return [x, y] unless right_legend_reserved?
+
+    max_center_x = right_legend_left_edge - (width.to_f / 2.0)
+
+    [[x, max_center_x].min, y]
+  end
+
   # @rbs return: bool
   def right_legend_reserved?
     @legend_position == :right && !@hide_mini_legend && !@original_columns.nil?

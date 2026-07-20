@@ -28,6 +28,13 @@ class Gruff::Mini::Pie < Gruff::Pie
   # @rbs return: Float | Integer
   def label_placement_max_x: () -> (Float | Integer)
 
+  # Keep initial label placement out of the reserved right legend area too,
+  # because radial collision resolution can only move labels farther outward.
+  # @rbs slice: Gruff::Pie::PieSlice
+  # @rbs width: Float | Integer
+  # @rbs return: [Float, Float]
+  def label_coordinates_for: (Gruff::Pie::PieSlice slice, Float | Integer width) -> [ Float, Float ]
+
   # @rbs return: bool
   def right_legend_reserved?: () -> bool
 

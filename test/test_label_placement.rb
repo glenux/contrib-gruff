@@ -59,21 +59,21 @@ class TestLabelPlacement < Minitest::Test
     assert detector.collides?(fixed, one_pixel_closer)
   end
 
-  def test_radial_offset_preserves_the_anchor_alignment_for_a_diagonal_label
+  def test_radial_offset_moves_a_diagonal_label_along_its_ray
     strategy = build_strategy(Gruff::LabelPlacement::PieMoveBothStrategy)
-    label = build_label(0, x: 100.0, y: 100.0, side: :right, slice_degrees: 10.0, offset: 0.0).tap do |placed_label|
+    label = build_label(0, x: 100.0, y: 100.0, slice_degrees: 10.0, offset: 0.0).tap do |placed_label|
       placed_label.instance_variable_set(:@angle, 45.0)
     end
-    original_anchor_x = label.anchor_x
-    original_anchor_y = label.anchor_y
+    original_x = label.x
+    original_y = label.y
 
     strategy.send(:prepare, [label])
     strategy.send(:move_label!, label, [label])
 
     diagonal_step = Gruff::Pie::RADIAL_LABEL_STEP / Math.sqrt(2.0)
 
-    assert_in_delta original_anchor_x + diagonal_step, label.anchor_x, 0.001
-    assert_in_delta original_anchor_y + diagonal_step, label.anchor_y, 0.001
+    assert_in_delta original_x + diagonal_step, label.x, 0.001
+    assert_in_delta original_y + diagonal_step, label.y, 0.001
   end
 
   def test_max_iterations_stops_an_endless_search_and_reports_the_budget_exhaustion
@@ -248,7 +248,7 @@ private
     )
   end
 
-  def build_label(id, x:, y: 100.0, side: :right, slice_degrees: 10.0, offset: 0.0)
+  def build_label(id, x:, y: 100.0, slice_degrees: 10.0, offset: 0.0)
     Gruff::LabelPlacement::PiePlacedLabel.new(
       id: id,
       text: id.to_s,
@@ -261,7 +261,6 @@ private
       base_x: x,
       base_y: y,
       color: '#000000',
-      side: side,
       slice_degrees: slice_degrees,
       slice_value: slice_degrees
     ).tap do |label|
